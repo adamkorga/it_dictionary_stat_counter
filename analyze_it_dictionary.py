@@ -1,4 +1,5 @@
 import argparse
+import statistics
 import sys
 import csv
 import os
@@ -249,6 +250,34 @@ def generate_report(report, html_file_path):
     for part_idx, part in enumerate(report, 1):
         for i, sec in enumerate(part['sections'], 1):
             print_entry(part['part'], sec, number_prefix=f"{part_idx-1}.{i}")
+
+    # --- Terms Count Statistics ---
+    all_term_counts = [
+        entry['Terms_Count']
+        for entry in breakdown_data
+        if isinstance(entry['Terms_Count'], int)
+    ]
+
+    overall_avg = statistics.mean(all_term_counts) if all_term_counts else 0
+    overall_stdev = statistics.stdev(all_term_counts) if len(all_term_counts) > 1 else 0
+
+    part_term_counts = {}
+    for entry in breakdown_data:
+        if isinstance(entry['Terms_Count'], int):
+            part_name = entry['Part']
+            if part_name not in part_term_counts:
+                part_term_counts[part_name] = []
+            part_term_counts[part_name].append(entry['Terms_Count'])
+
+    print("\n--- Terms Count Statistics ---")
+    print(f"{'Part':<50} | {'Avg Terms/Section':<17} | {'Std Dev'}")
+    print(f"{'-'*50}-|-------------------|---------")
+    print(f"{'Entire Document':<50} | {overall_avg:<17.2f} | {overall_stdev:.2f}")
+
+    for part_name, counts in sorted(part_term_counts.items()):
+        avg = statistics.mean(counts) if counts else 0
+        stdev = statistics.stdev(counts) if len(counts) > 1 else 0
+        print(f"{part_name:<50} | {avg:<17.2f} | {stdev:.2f}")
     
     print(f"\nCSV files created: {summary_csv}, {breakdown_csv}")
 
